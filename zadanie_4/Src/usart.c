@@ -37,7 +37,7 @@ void USART2_RegisterCallback(void *callback)
 
 /* Space for global variables, if you need them */
 
-	// type global variables here
+static uint16_t old_pos = 0;
 
 
 /* USART2 init function */
@@ -73,7 +73,7 @@ void MX_USART2_UART_Init(void)
 
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_6, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
   LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_6, LL_DMA_PRIORITY_MEDIUM);
-  LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_6, LL_DMA_MODE_NORMAL);              // NORMAL, nie circular
+  LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_6, LL_DMA_MODE_NORMAL);
   LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_CHANNEL_6, LL_DMA_PERIPH_NOINCREMENT);
   LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_CHANNEL_6, LL_DMA_MEMORY_INCREMENT);
   LL_DMA_SetPeriphSize(DMA1, LL_DMA_CHANNEL_6, LL_DMA_PDATAALIGN_BYTE);
@@ -150,7 +150,37 @@ void USART2_PutBuffer(uint8_t *buffer, uint8_t length)
  */
 void USART2_CheckDmaReception(void)
 {
-	//type your implementation here
+	if(USART2_ProcessData == 0) return;
+
+	uint16_t pos = DMA_USART2_BUFFER_SIZE - LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_6);
+
+	while(old_pos < pos)
+	{
+		USART2_ProcessData(bufferUSART2dma[old_pos++]);
+	}
+
+	if((DMA_USART2_BUFFER_SIZE - pos) < DMA_USART2_MAX_RX_BURST)
+	{
+		LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_6);
+		while(LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_6));
+
+		pos = DMA_USART2_BUFFER_SIZE - LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_6);
+		while(old_pos < pos)
+		{
+			USART2_ProcessData(bufferUSART2dma[old_pos++]);
+		}
+
+		LL_DMA_ClearFlag_HT6(DMA1);
+		LL_DMA_ClearFlag_TC6(DMA1);
+		LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_6, DMA_USART2_BUFFER_SIZE);
+		LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_6);
+		old_pos = 0;
+	}
+}
+
+uint16_t USART2_GetDmaBufferOccupied(void)
+{
+	return DMA_USART2_BUFFER_SIZE - LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_6);
 }
 
 

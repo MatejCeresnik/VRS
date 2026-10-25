@@ -32,7 +32,7 @@
 
 /* USER CODE BEGIN Private defines */
 #define DMA_USART2_BUFFER_SIZE 128
-#define DMA_USART2_MAX_RX_BURST 20   // max. pocet znakov, ktore PC posle naraz
+#define DMA_USART2_MAX_RX_BURST 20
 
 /* USER CODE END Private defines */
 
@@ -40,6 +40,7 @@ void MX_USART2_UART_Init(void);
 void USART2_PutBuffer(uint8_t *buffer, uint8_t length);
 void USART2_CheckDmaReception(void);
 void USART2_RegisterCallback(void *callback);
+uint16_t USART2_GetDmaBufferOccupied(void);
 
 /* USER CODE BEGIN Prototypes */
 
