@@ -31,7 +31,8 @@
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
-#define DMA_USART2_BUFFER_SIZE 256
+#define DMA_USART2_BUFFER_SIZE 128
+#define DMA_USART2_MAX_RX_BURST 20   // max. pocet znakov, ktore PC posle naraz
 
 /* USER CODE END Private defines */
 
