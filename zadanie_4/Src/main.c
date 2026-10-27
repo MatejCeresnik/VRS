@@ -38,7 +38,9 @@ void proccesDmaData(uint8_t sign);
 
 /* Space for your global variables. */
 
-	// type your global variables here:
+uint8_t prijimanie = 0;
+uint8_t pocet_znakov = 0;
+char retazec[36];
 
 
 int main(void)
@@ -59,7 +61,7 @@ int main(void)
 
   /* Space for your local variables, callback registration ...*/
 
-  	  //type your code here:
+  USART2_RegisterCallback(proccesDmaData);
 
   while (1)
   {
@@ -75,7 +77,7 @@ int main(void)
 	   * Example message (what I wish to see in terminal) - Valid string: Platn15uborZnakov, lower-case: 13, upper-case: 2
 	   */
 
-  	  	  	  //type your code here:
+  	  	  USART2_RegisterCallback(proccesDmaData);
   }
   /* USER CODE END 3 */
 }
@@ -119,7 +121,32 @@ void proccesDmaData(uint8_t sign)
 {
 	/* Process received data */
 
-		// type your algorithm here:
+	if(sign == '#')
+	{
+		prijimanie = 1;
+		pocet_znakov = 0;
+		return;
+	}
+
+	if(prijimanie == 0)
+	{
+		return;
+	}
+
+	if(sign == '$')
+	{
+		retazec[pocet_znakov] = '\0';
+		prijimanie = 0;
+		return;
+	}
+
+	retazec[pocet_znakov] = sign;
+	pocet_znakov++;
+
+	if(pocet_znakov >= 35)
+	{
+		prijimanie = 0;
+	}
 }
 
 
