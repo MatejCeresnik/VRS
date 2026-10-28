@@ -70,6 +70,7 @@ int main(void)
   /* Space for your local variables, callback registration ...*/
 
   USART2_RegisterCallback(proccesDmaData);
+  uint16_t citac_ms = 0;
 
   while (1)
   {
@@ -84,6 +85,24 @@ int main(void)
 	   * Message format - "Valid string: %s, lower-case: %d, upper-case: %d"
 	   * Example message (what I wish to see in terminal) - Valid string: Platn15uborZnakov, lower-case: 13, upper-case: 2
 	   */
+
+	  if(LL_SYSTICK_IsActiveCounterFlag())
+	  {
+		  citac_ms++;
+	  }
+
+	  if(citac_ms >= 2000)
+	  {
+		  citac_ms = 0;
+		  uint16_t obsadene = USART2_GetDmaBufferOccupied();
+		  float vytazenie = (float)obsadene * 100.0f / DMA_USART2_BUFFER_SIZE;
+		  int cela_cast = (int)vytazenie;
+		  int desatinna_cast = (int)(vytazenie * 10) % 10;
+		  int dlzka = sprintf((char*)sprava, "Buffer capacity: %d bytes, occupied memory: %d bytes, load [in %%]: %d.%d%%\r\n",
+				  DMA_USART2_BUFFER_SIZE, obsadene, cela_cast, desatinna_cast);
+		  USART2_PutBuffer(sprava, dlzka);
+		  while(LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_7));
+	  }
 
 	  if(novy_retazec == 1)
 	  {
