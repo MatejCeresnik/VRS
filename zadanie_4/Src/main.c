@@ -23,6 +23,8 @@
 #include "dma.h"
 #include "usart.h"
 #include "gpio.h"
+#include <stdio.h>
+#include <string.h>
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -41,6 +43,12 @@ void proccesDmaData(uint8_t sign);
 uint8_t prijimanie = 0;
 uint8_t pocet_znakov = 0;
 char retazec[36];
+letter_count_ pocet_pismen;
+
+char platny_retazec[36];
+letter_count_ platny_pocet;
+volatile uint8_t novy_retazec = 0;
+uint8_t sprava[100];
 
 
 int main(void)
@@ -77,7 +85,14 @@ int main(void)
 	   * Example message (what I wish to see in terminal) - Valid string: Platn15uborZnakov, lower-case: 13, upper-case: 2
 	   */
 
-  	  	  USART2_RegisterCallback(proccesDmaData);
+	  if(novy_retazec == 1)
+	  {
+		  novy_retazec = 0;
+		  int dlzka = sprintf((char*)sprava, "Valid string: %s, lower-case: %d, upper-case: %d\r\n",
+				  platny_retazec, platny_pocet.small_letter, platny_pocet.capital_letter);
+		  USART2_PutBuffer(sprava, dlzka);
+		  while(LL_DMA_IsEnabledChannel(DMA1, LL_DMA_CHANNEL_7));
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -125,6 +140,8 @@ void proccesDmaData(uint8_t sign)
 	{
 		prijimanie = 1;
 		pocet_znakov = 0;
+		pocet_pismen.small_letter = 0;
+		pocet_pismen.capital_letter = 0;
 		return;
 	}
 
@@ -136,8 +153,20 @@ void proccesDmaData(uint8_t sign)
 	if(sign == '$')
 	{
 		retazec[pocet_znakov] = '\0';
+		strcpy(platny_retazec, retazec);
+		platny_pocet = pocet_pismen;
+		novy_retazec = 1;
 		prijimanie = 0;
 		return;
+	}
+
+	if(sign >= 'a' && sign <= 'z')
+	{
+		pocet_pismen.small_letter++;
+	}
+	else if(sign >= 'A' && sign <= 'Z')
+	{
+		pocet_pismen.capital_letter++;
 	}
 
 	retazec[pocet_znakov] = sign;
