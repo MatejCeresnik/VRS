@@ -83,5 +83,83 @@ void MX_I2C1_Init(void)
 
 /* USER CODE BEGIN 1 */
 
+void i2c_write_bytes(uint8_t slave_address, uint8_t register_address, uint8_t *data, uint8_t length)
+{
+	uint8_t i = 0;
+
+	LL_I2C_HandleTransfer(I2C1, slave_address, LL_I2C_ADDRSLAVE_7BIT, length + 1, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_WRITE);
+
+	while(!LL_I2C_IsActiveFlag_STOP(I2C1))
+	{
+		if(LL_I2C_IsActiveFlag_TXIS(I2C1))
+		{
+			if(i == 0)
+			{
+				LL_I2C_TransmitData8(I2C1, register_address);
+			}
+			else
+			{
+				LL_I2C_TransmitData8(I2C1, data[i - 1]);
+			}
+			i++;
+		}
+	}
+
+	LL_I2C_ClearFlag_STOP(I2C1);
+	LL_I2C_ClearFlag_NACK(I2C1);
+}
+
+void i2c_write_byte(uint8_t slave_address, uint8_t register_address, uint8_t value)
+{
+	i2c_write_bytes(slave_address, register_address, &value, 1);
+}
+
+void i2c_read_bytes(uint8_t slave_address, uint8_t register_address, uint8_t *data, uint8_t length)
+{
+	uint8_t i = 0;
+
+	LL_I2C_HandleTransfer(I2C1, slave_address, LL_I2C_ADDRSLAVE_7BIT, 1, LL_I2C_MODE_SOFTEND, LL_I2C_GENERATE_START_WRITE);
+
+	while(!LL_I2C_IsActiveFlag_TC(I2C1))
+	{
+		if(LL_I2C_IsActiveFlag_TXIS(I2C1))
+		{
+			LL_I2C_TransmitData8(I2C1, register_address);
+		}
+		if(LL_I2C_IsActiveFlag_NACK(I2C1))
+		{
+			LL_I2C_ClearFlag_NACK(I2C1);
+			LL_I2C_ClearFlag_STOP(I2C1);
+			return;
+		}
+	}
+
+	LL_I2C_HandleTransfer(I2C1, slave_address, LL_I2C_ADDRSLAVE_7BIT, length, LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
+
+	while(i < length)
+	{
+		if(LL_I2C_IsActiveFlag_RXNE(I2C1))
+		{
+			data[i] = LL_I2C_ReceiveData8(I2C1);
+			i++;
+		}
+		if(LL_I2C_IsActiveFlag_NACK(I2C1))
+		{
+			break;
+		}
+	}
+
+	while(!LL_I2C_IsActiveFlag_STOP(I2C1));
+	LL_I2C_ClearFlag_STOP(I2C1);
+	LL_I2C_ClearFlag_NACK(I2C1);
+}
+
+uint8_t i2c_read_byte(uint8_t slave_address, uint8_t register_address)
+{
+	uint8_t value = 0;
+	i2c_read_bytes(slave_address, register_address, &value, 1);
+	return value;
+}
+
 /* USER CODE END 1 */
 
